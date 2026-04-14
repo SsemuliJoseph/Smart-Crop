@@ -1,0 +1,23 @@
+Dataset preparation completed on 14th April,2026
+Source: PlantVillage potato datasetfrom kaggle
+Duplicates removed: yes
+Split ratio: approximately 80/10/10
+
+Image counts:
+  Potato___Early_blight:
+   train: 800
+    val: 101
+    test:101
+  
+  Potato___Late_blight:
+   train: 800
+   val: 100
+   test: 100
+
+  Potato___healthy:
+   train: 122
+   val: 15
+   test: 15
+
+   Total images: 2154
+   Status: Ready for training
