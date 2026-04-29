@@ -1,0 +1,75 @@
+# .github/workflows/ci.yml
+# PotatoGuard CI - GitHub Actions Pipeline
+#
+# Runs automatically every time any team member pushes to their
+# feature/* branch or opens a Pull Request to main.
+#
+# Author : Katusiime Moreen  (feature/testing)
+# Project: PotatoGuard - Group 7, BSc Computer Science 2024/2025
+
+name: PotatoGuard CI Tests
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Pytest Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov moto[s3,dynamodb] boto3 \
+                      tensorflow pillow scikit-learn requests numpy
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+          if [ -f model/requirements.txt ]; then pip install -r model/requirements.txt; fi
+
+      - name: Run tests with coverage
+        env:
+          AWS_ACCESS_KEY_ID: testing
+          AWS_SECRET_ACCESS_KEY: testing
+          AWS_DEFAULT_REGION: us-east-1
+          DYNAMODB_TABLE: potatoguard-detections
+          S3_BUCKET: potatoguard-images
+          SAGEMAKER_ENDPOINT: potatoguard-endpoint
+          AWS_REGION_NAME: us-east-1
+        run: |
+          python -m pytest tests/ \
+            -v \
+            --tb=short \
+            --cov=backend \
+            --cov=database \
+            --cov-report=term-missing \
+            --ignore=tests/test_model.py
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
+          retention-days: 7
