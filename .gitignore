@@ -1,0 +1,9 @@
+node_modules/
+.env
+__pycache__/
+*.h5
+.expo/
+# other common react native ignores
+ios/
+android/
+PotatoGuard_CopilotPrompts.pdf
