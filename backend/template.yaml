@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: PotatoGuard - Serverless Application Model Template
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.9
+    Environment:
+      Variables:
+        DYNAMODB_TABLE: potatoguard-detections
+        S3_BUCKET: potatoguard-images
+        SAGEMAKER_ENDPOINT: potatoguard-endpoint
+        AWS_REGION: us-east-1
+
+Resources:
+  # Lambda function for disease detection
+  DetectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: potatoguard-detect
+      CodeUri: detect/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: potatoguard-detections
+        - S3CrudOperation:
+            BucketName: potatoguard-images
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sagemaker:InvokeEndpoint
+              Resource: '*'
+      Events:
+        DetectAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PotatoGuardAPI
+            Path: /detect
+            Method: POST
+
+  # Lambda function for retrieving history
+  HistoryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: potatoguard-history
+      CodeUri: history/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: potatoguard-detections
+      Events:
+        HistoryAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PotatoGuardAPI
+            Path: /history/{farmerId}
+            Method: GET
+
+  # Lambda function for retrieving single report
+  ReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: potatoguard-report
+      CodeUri: report/
+      Handler: handler.lambda_handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: potatoguard-detections
+      Events:
+        ReportAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PotatoGuardAPI
+            Path: /report/{detectionId}
+            Method: GET
+
+  # API Gateway
+  PotatoGuardAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: potatoguard-api
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  APIEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${PotatoGuardAPI}.execute-api.${AWS::Region}.amazonaws.com/prod'
+  
+  DetectFunctionArn:
+    Description: ARN of Detect Lambda function
+    Value: !GetAtt DetectFunction.Arn
+  
+  HistoryFunctionArn:
+    Description: ARN of History Lambda function
+    Value: !GetAtt HistoryFunction.Arn
+  
+  ReportFunctionArn:
+    Description: ARN of Report Lambda function
+    Value: !GetAtt ReportFunction.Arn
