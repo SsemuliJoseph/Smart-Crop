@@ -2,6 +2,8 @@
 
 **Group 7 | BSc Computer Science | 2024/2025**
 
+🚀 **Live Demo:** [https://chimerical-taiyaki-84a4c2.netlify.app/](https://chimerical-taiyaki-84a4c2.netlify.app/)
+
 ## What It Does
 
 PotatoGuard is an AI-powered mobile application designed to detect diseases in Irish potatoes instantly. Farmers photograph a potato leaf, and the image is sent to an AWS SageMaker CNN that classifies the disease into one of four categories:
